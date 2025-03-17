@@ -48,10 +48,6 @@ def scrape(type, filename):
     # 方法1: 直接访问GitHub (可能会失败)
     urls = [
         f'https://github.com/trending/?since={type}',
-        # 方法2: 尝试不使用HTTPS (如果环境允许)
-        f'http://github.com/trending/?since={type}',
-        # 方法3: 使用代理API (如果有的话)
-        # f'https://your-proxy-api.com/github/trending?since={type}'
     ]
     
     content = None
