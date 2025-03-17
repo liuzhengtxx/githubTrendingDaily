@@ -22,8 +22,18 @@ def git_add_commit_push(date):
 
 
 def createMarkdown(date, filename):
+    # 检查文件是否存在，如果存在则删除
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+            print(f"已删除现有文件: {filename}")
+        except Exception as e:
+            print(f"删除文件失败: {e}")
+    
+    # 创建新文件
     with open(filename, 'w') as f:
         f.write("## " + date + "\n")
+    print(f"已创建新文件: {filename}")
 
 
 def scrape(type, filename):
@@ -148,12 +158,12 @@ def job():
 
 if __name__ == '__main__':
     job()
-    # # 设置每天凌晨2点执行任务
+    # 设置每天凌晨2点执行任务
     # schedule.every().day.at("02:00").do(job)
-    #
+    
     # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     # print("已设置每天凌晨2:00执行任务")
-    #
+    
     # # 持续运行，等待定时任务
     # while True:
     #     schedule.run_pending()
