@@ -24,8 +24,18 @@ def git_add_commit_push(date):
 
 
 def createMarkdown(date, filename):
+    # 检查文件是否存在，如果存在则删除
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+            print(f"已删除现有文件: {filename}")
+        except Exception as e:
+            print(f"删除文件失败: {e}")
+    
+    # 创建新文件
     with open(filename, 'w') as f:
         f.write("## " + date + "\n")
+    print(f"已创建新文件: {filename}")
 
 
 def scrape(type, filename):
