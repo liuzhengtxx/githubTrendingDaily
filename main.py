@@ -49,14 +49,23 @@ def scrape(type, filename):
             description = i("p.col-9").text()
             url = i(".lh-condensed a").attr("href")
             url = "https://github.com" + url
-            # fork count
-            fork_element = i('a.Link--muted:has(svg.octicon-repo-forked)')
-            fork_count = fork_element.text().strip()
-            # star
-            star_element = i('a.Link--muted:has(svg.octicon-star)')
-            star_count = star_element.text().strip()
-            ownerImg = i("p.repo-list-meta a img").attr("src")
-            # print(ownerImg)
+            
+            # 修改选择器，避免使用:has()伪类
+            # fork count - 查找包含fork图标的链接
+            fork_count = ""
+            links = i('a.Link--muted')
+            for link in links.items():
+                if link.find('svg.octicon-repo-forked').length > 0:
+                    fork_count = link.text().strip()
+                    break
+            
+            # star count - 查找包含star图标的链接
+            star_count = ""
+            for link in links.items():
+                if link.find('svg.octicon-star').length > 0:
+                    star_count = link.text().strip()
+                    break
+            
             f.write(u"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count}\n".format(title=title, url=url, description=description,star_count=star_count,fork_count=fork_count))
 
 
@@ -81,9 +90,9 @@ def job():
     createMarkdown(strdate, file_path)
     
     # 抓取数据并写入markdown
-    # scrape('daily', file_path)
-    # scrape('weekly', file_path)
-    # scrape('monthly', file_path)
+    scrape('daily', file_path)
+    scrape('weekly', file_path)
+    scrape('monthly', file_path)
 
     # git add commit push
     git_add_commit_push(strdate)
@@ -93,15 +102,11 @@ def job():
 
 if __name__ == '__main__':
     job()
-
     # # 设置每天凌晨2点执行任务
     # schedule.every().day.at("02:00").do(job)
     #
     # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     # print("已设置每天凌晨2:00执行任务")
-    #
-    # # 立即执行一次任务（可选，如果需要启动时就执行一次）
-    # # job()
     #
     # # 持续运行，等待定时任务
     # while True:
