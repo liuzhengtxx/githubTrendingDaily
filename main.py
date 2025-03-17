@@ -6,7 +6,11 @@ import requests
 import os
 import time
 import schedule
+import urllib3
 from pyquery import PyQuery as pq
+
+# 禁用SSL警告
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def git_add_commit_push(date):
@@ -26,47 +30,91 @@ def createMarkdown(date, filename):
 
 def scrape(type, filename):
     HEADERS = {
-        'User-Agent'	: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
-        'Accept'			: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Encoding'	: 'gzip,deflate,sdch',
-        'Accept-Language'	: 'zh-CN,zh;q=0.8'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
     }
-    url = 'https://github.com/trending/?since={type}'.format(type=type)
-    r = requests.get(url, headers=HEADERS)
-    assert r.status_code == 200
-
-    d = pq(r.content)
-    items = d('div.Box article.Box-row')
-
-    # codecs to solve the problem utf-8 codec like chinese
-    with codecs.open(filename, "a", "utf-8") as f:
-        f.write('\n#### {type}\n'.format(type=type))
-
-        for item in items:
-            i = pq(item)
-            title = i(".lh-condensed a").text()
-            owner = i(".lh-condensed span.text-normal").text()
-            description = i("p.col-9").text()
-            url = i(".lh-condensed a").attr("href")
-            url = "https://github.com" + url
+    
+    # 使用备用URL - 尝试使用镜像站点或API
+    # 方法1: 直接访问GitHub (可能会失败)
+    urls = [
+        f'https://github.com/trending/?since={type}',
+        # 方法2: 尝试不使用HTTPS (如果环境允许)
+        f'http://github.com/trending/?since={type}',
+        # 方法3: 使用代理API (如果有的话)
+        # f'https://your-proxy-api.com/github/trending?since={type}'
+    ]
+    
+    content = None
+    error_msg = ""
+    
+    # 尝试所有可能的URL
+    for url in urls:
+        try:
+            print(f"尝试请求: {url}")
+            # 禁用SSL验证
+            r = requests.get(url, headers=HEADERS, verify=False, timeout=30)
+            if r.status_code == 200 and r.content:
+                content = r.content
+                print(f"成功从 {url} 获取数据")
+                break
+        except Exception as e:
+            error_msg = str(e)
+            print(f"请求 {url} 失败: {e}")
+            continue
+    
+    # 如果所有URL都失败了
+    if content is None:
+        with codecs.open(filename, "a", "utf-8") as f:
+            f.write(f"\n#### {type} - 获取数据失败\n")
+            f.write(f"* 错误信息: {error_msg}\n")
+        return
+    
+    try:
+        d = pq(content)
+        items = d('div.Box article.Box-row')
+        
+        # 如果没有找到项目
+        if not items:
+            with codecs.open(filename, "a", "utf-8") as f:
+                f.write(f"\n#### {type} - 未找到项目\n")
+            return
+        
+        # 写入找到的项目
+        with codecs.open(filename, "a", "utf-8") as f:
+            f.write(f'\n#### {type}\n')
             
-            # 修改选择器，避免使用:has()伪类
-            # fork count - 查找包含fork图标的链接
-            fork_count = ""
-            links = i('a.Link--muted')
-            for link in links.items():
-                if link.find('svg.octicon-repo-forked').length > 0:
-                    fork_count = link.text().strip()
-                    break
-            
-            # star count - 查找包含star图标的链接
-            star_count = ""
-            for link in links.items():
-                if link.find('svg.octicon-star').length > 0:
-                    star_count = link.text().strip()
-                    break
-            
-            f.write(u"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count}\n".format(title=title, url=url, description=description,star_count=star_count,fork_count=fork_count))
+            for item in items:
+                i = pq(item)
+                title = i(".lh-condensed a").text()
+                owner = i(".lh-condensed span.text-normal").text()
+                description = i("p.col-9").text()
+                url = i(".lh-condensed a").attr("href")
+                url = "https://github.com" + url
+                
+                # 修改选择器，避免使用:has()伪类
+                # fork count - 查找包含fork图标的链接
+                fork_count = ""
+                links = i('a.Link--muted')
+                for link in links.items():
+                    if link.find('svg.octicon-repo-forked').length > 0:
+                        fork_count = link.text().strip()
+                        break
+                
+                # star count - 查找包含star图标的链接
+                star_count = ""
+                for link in links.items():
+                    if link.find('svg.octicon-star').length > 0:
+                        star_count = link.text().strip()
+                        break
+                
+                f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count}\n")
+    except Exception as e:
+        print(f"解析数据失败: {e}")
+        with codecs.open(filename, "a", "utf-8") as f:
+            f.write(f"\n#### {type} - 解析数据失败\n")
+            f.write(f"* 错误信息: {str(e)}\n")
 
 
 def job():
