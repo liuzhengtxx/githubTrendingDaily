@@ -92,7 +92,7 @@ def scrape(type, filename):
             for item in items:
                 i = pq(item)
                 title = i(".lh-condensed a").text()
-                owner = i(".lh-condensed span.text-normal").text()
+                language = i('span[itemprop="programmingLanguage"]').text()
                 description = i("p.col-9").text()
                 url = i(".lh-condensed a").attr("href")
                 url = "https://github.com" + url
@@ -113,7 +113,7 @@ def scrape(type, filename):
                         star_count = link.text().strip()
                         break
                 
-                f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count}\n")
+                f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count} language:{language}\n")
     except Exception as e:
         print(f"解析数据失败: {e}")
         with codecs.open(filename, "a", "utf-8") as f:
@@ -153,13 +153,14 @@ def job():
 
 
 if __name__ == '__main__':
-    # 设置每天凌晨2点执行任务
-    schedule.every().day.at("14:46").do(job)
-    
-    print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("已设置每天凌晨2:00执行任务")
-    
-    # 持续运行，等待定时任务
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # 每分钟检查一次是否有待执行的任务
+    job()
+    # # 设置每天凌晨2点执行任务
+    # schedule.every().day.at("14:43").do(job)
+    #
+    # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # print("已设置每天凌晨2:00执行任务")
+    #
+    # # 持续运行，等待定时任务
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(60)  # 每分钟检查一次是否有待执行的任务
