@@ -22,8 +22,18 @@ def git_add_commit_push(date):
 
 
 def createMarkdown(date, filename):
+    # 检查文件是否存在，如果存在则删除
+    if os.path.exists(filename):
+        try:
+            os.remove(filename)
+            print(f"已删除现有文件: {filename}")
+        except Exception as e:
+            print(f"删除文件失败: {e}")
+    
+    # 创建新文件
     with open(filename, 'w') as f:
         f.write("## " + date + "\n")
+    print(f"已创建新文件: {filename}")
 
 
 def scrape(type, filename):
@@ -38,10 +48,6 @@ def scrape(type, filename):
     # 方法1: 直接访问GitHub (可能会失败)
     urls = [
         f'https://github.com/trending/?since={type}',
-        # 方法2: 尝试不使用HTTPS (如果环境允许)
-        f'http://github.com/trending/?since={type}',
-        # 方法3: 使用代理API (如果有的话)
-        # f'https://your-proxy-api.com/github/trending?since={type}'
     ]
     
     content = None
@@ -147,14 +153,13 @@ def job():
 
 
 if __name__ == '__main__':
-    job()
-    # # 设置每天凌晨2点执行任务
-    # schedule.every().day.at("02:00").do(job)
-    #
-    # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    # print("已设置每天凌晨2:00执行任务")
-    #
-    # # 持续运行，等待定时任务
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(60)  # 每分钟检查一次是否有待执行的任务
+    # 设置每天凌晨2点执行任务
+    schedule.every().day.at("14:32").do(job)
+    
+    print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("已设置每天凌晨2:00执行任务")
+    
+    # 持续运行，等待定时任务
+    while True:
+        schedule.run_pending()
+        time.sleep(60)  # 每分钟检查一次是否有待执行的任务
