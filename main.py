@@ -50,10 +50,6 @@ def scrape(type, filename):
     # 方法1: 直接访问GitHub (可能会失败)
     urls = [
         f'https://github.com/trending/?since={type}',
-        # 方法2: 尝试不使用HTTPS (如果环境允许)
-        f'http://github.com/trending/?since={type}',
-        # 方法3: 使用代理API (如果有的话)
-        # f'https://your-proxy-api.com/github/trending?since={type}'
     ]
     
     content = None
@@ -98,7 +94,7 @@ def scrape(type, filename):
             for item in items:
                 i = pq(item)
                 title = i(".lh-condensed a").text()
-                owner = i(".lh-condensed span.text-normal").text()
+                language = i('span[itemprop="programmingLanguage"]').text()
                 description = i("p.col-9").text()
                 url = i(".lh-condensed a").attr("href")
                 url = "https://github.com" + url
@@ -119,7 +115,7 @@ def scrape(type, filename):
                         star_count = link.text().strip()
                         break
                 
-                f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count}\n")
+                f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count} language:{language}\n")
     except Exception as e:
         print(f"解析数据失败: {e}")
         with codecs.open(filename, "a", "utf-8") as f:
@@ -160,12 +156,12 @@ def job():
 
 if __name__ == '__main__':
     job()
-    # 设置每天凌晨2点执行任务
-    # schedule.every().day.at("02:00").do(job)
-    
+    # # 设置每天凌晨2点执行任务
+    # schedule.every().day.at("14:43").do(job)
+    #
     # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     # print("已设置每天凌晨2:00执行任务")
-    
+    #
     # # 持续运行，等待定时任务
     # while True:
     #     schedule.run_pending()
