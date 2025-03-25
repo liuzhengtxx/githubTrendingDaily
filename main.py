@@ -70,8 +70,8 @@ def translate_text(text, translation_cache):
         print(f"从缓存获取翻译: {text[:30]}...")
         return cached_translation
 
-    appid = '20250325002314837'
-    secret_key = 'YLXpOEnq1dupbLBjiV4a'
+    appid = ''
+    secret_key = ''
     api_url = 'http://api.fanyi.baidu.com/api/trans/vip/translate'
     salt = random.randint(32768, 65536)
 
