@@ -5,11 +5,38 @@ import os
 import time
 import schedule
 import urllib3
+import random
+import hashlib
+import json
 from pyquery import PyQuery as pq
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# 添加翻译缓存
+TRANSLATION_CACHE_FILE = '/log/translation_cache.json'
+
+def load_translation_cache():
+    """加载翻译缓存"""
+    try:
+        if os.path.exists(TRANSLATION_CACHE_FILE):
+            with open(TRANSLATION_CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"加载翻译缓存失败: {e}")
+    return {}
+
+def save_translation_cache(cache):
+    """保存翻译缓存"""
+    try:
+        with open(TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"保存翻译缓存失败: {e}")
+
+def get_cached_translation(text, translation_cache):
+    """从缓存中获取翻译"""
+    return translation_cache.get(text)
 
 def git_add_commit_push(date):
     cmd_git_add = 'git add .'
@@ -35,8 +62,61 @@ def createMarkdown(date, filename):
         f.write("## " + date + "\n")
     print(f"已创建新文件: {filename}")
 
+def translate_text(text, translation_cache):
+    """带缓存的翻译函数"""
+    # 检查缓存
+    cached_translation = get_cached_translation(text, translation_cache)
+    if cached_translation:
+        print(f"从缓存获取翻译: {text[:30]}...")
+        return cached_translation
 
-def scrape(type, filename):
+    appid = '20250325002314837'
+    secret_key = 'YLXpOEnq1dupbLBjiV4a'
+    api_url = 'http://api.fanyi.baidu.com/api/trans/vip/translate'
+    salt = random.randint(32768, 65536)
+
+    # 生成签名
+    sign = appid + text + str(salt) + secret_key
+    sign = hashlib.md5(sign.encode()).hexdigest()
+
+    params = {
+        'q': text,
+        'from': 'en',
+        'to': 'zh',
+        'appid': appid,
+        'salt': salt,
+        'sign': sign
+    }
+
+    try:
+        response = requests.get(api_url, params=params)
+        response.raise_for_status()
+        result = response.json()
+        time.sleep(1)
+
+        if 'trans_result' in result:
+            translations = [item['dst'] for item in result['trans_result']]
+            if translations:
+                translated_text = translations[0]
+                # 将新翻译添加到缓存
+                translation_cache[text] = translated_text
+                print(f"新翻译已缓存: {text[:30]}...")
+                return translated_text
+            else:
+                return text
+        else:
+            print(f"翻译失败，错误信息: {result.get('error_msg', '未知错误')}")
+            return text
+
+    except requests.RequestException as e:
+        print(f"请求出错: {e}")
+        return text
+    except (KeyError, json.JSONDecodeError):
+        print("解析响应数据出错")
+        return text
+
+
+def scrape(type, filename, translation_cache):
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -112,6 +192,8 @@ def scrape(type, filename):
                     if link.find('svg.octicon-star').length > 0:
                         star_count = link.text().strip()
                         break
+                if description:
+                    description = translate_text(description, translation_cache)
                 
                 f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count} language:{language}\n")
     except Exception as e:
@@ -123,6 +205,9 @@ def scrape(type, filename):
 
 def job():
     print(f"任务执行时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # 加载翻译缓存
+    translation_cache = load_translation_cache()
     
     # 获取当前年份
     current_year = datetime.datetime.now().year
@@ -142,10 +227,13 @@ def job():
     createMarkdown(strdate, file_path)
     
     # 抓取数据并写入markdown
-    scrape('daily', file_path)
-    scrape('weekly', file_path)
-    scrape('monthly', file_path)
+    scrape('daily', file_path, translation_cache)
+    scrape('weekly', file_path, translation_cache)
+    scrape('monthly', file_path, translation_cache)
 
+    # 保存更新后的翻译缓存
+    save_translation_cache(translation_cache)
+    
     # git add commit push
     git_add_commit_push(strdate)
     
@@ -153,14 +241,14 @@ def job():
 
 
 if __name__ == '__main__':
-    # job()
-    # 设置每天凌晨2点执行任务
-    schedule.every().day.at("02:00").do(job)
-
-    print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("已设置每天凌晨2:00执行任务")
-
-    # 持续运行，等待定时任务
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # 每分钟检查一次是否有待执行的任务
+    job()
+    # # 设置每天凌晨2点执行任务
+    # schedule.every().day.at("02:00").do(job)
+    #
+    # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # print("已设置每天凌晨2:00执行任务")
+    #
+    # # 持续运行，等待定时任务
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(60)  # 每分钟检查一次是否有待执行的任务
