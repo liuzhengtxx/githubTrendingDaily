@@ -1,3 +1,5 @@
+# coding:utf-8
+
 import datetime
 import codecs
 import requests
@@ -123,7 +125,7 @@ def scrape(type, filename):
 
 def job():
     print(f"任务执行时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     # 获取当前年份
     current_year = datetime.datetime.now().year
     # 构建年份目录路径
@@ -153,14 +155,14 @@ def job():
 
 
 if __name__ == '__main__':
-    job()
-    # # 设置每天凌晨2点执行任务
-    # schedule.every().day.at("02:00").do(job)
-    #
-    # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    # print("已设置每天凌晨2:00执行任务")
-    #
-    # # 持续运行，等待定时任务
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(60)  # 每分钟检查一次是否有待执行的任务
+    # job()
+    # 设置每天凌晨2点执行任务
+    schedule.every().day.at("04:00").do(job)
+
+    print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("已设置每天凌晨2:00执行任务")
+
+    # 持续运行，等待定时任务
+    while True:
+        schedule.run_pending()
+        time.sleep(60)  # 每分钟检查一次是否有待执行的任务
