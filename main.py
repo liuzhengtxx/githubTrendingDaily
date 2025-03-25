@@ -1,3 +1,5 @@
+# coding:utf-8
+
 import datetime
 import codecs
 import requests
@@ -192,8 +194,8 @@ def scrape(type, filename, translation_cache):
                     if link.find('svg.octicon-star').length > 0:
                         star_count = link.text().strip()
                         break
-                if description:
-                    description = translate_text(description, translation_cache)
+                # if description:
+                #     description = translate_text(description, translation_cache)
                 
                 f.write(f"* [{title}]({url}):{description} star_count:{star_count} fork_count:{fork_count} language:{language}\n")
     except Exception as e:
@@ -207,7 +209,7 @@ def job():
     print(f"任务执行时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 加载翻译缓存
-    translation_cache = load_translation_cache()
+    # translation_cache = load_translation_cache()
     
     # 获取当前年份
     current_year = datetime.datetime.now().year
@@ -226,13 +228,13 @@ def job():
     # 创建markdown文件
     createMarkdown(strdate, file_path)
     
-    # 抓取数据并写入markdown
-    scrape('daily', file_path, translation_cache)
-    scrape('weekly', file_path, translation_cache)
-    scrape('monthly', file_path, translation_cache)
-
-    # 保存更新后的翻译缓存
-    save_translation_cache(translation_cache)
+    # # 抓取数据并写入markdown
+    # scrape('daily', file_path, translation_cache)
+    # scrape('weekly', file_path, translation_cache)
+    # scrape('monthly', file_path, translation_cache)
+    #
+    # # 保存更新后的翻译缓存
+    # save_translation_cache(translation_cache)
     
     # git add commit push
     git_add_commit_push(strdate)
