@@ -125,7 +125,7 @@ def scrape(type, filename):
 
 def job():
     print(f"任务执行时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     # 获取当前年份
     current_year = datetime.datetime.now().year
     # 构建年份目录路径
@@ -157,7 +157,7 @@ def job():
 if __name__ == '__main__':
     job()
     # # 设置每天凌晨2点执行任务
-    # schedule.every().day.at("14:43").do(job)
+    # schedule.every().day.at("04:00").do(job)
     #
     # print(f"程序启动时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     # print("已设置每天凌晨2:00执行任务")
